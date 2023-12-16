@@ -15,6 +15,7 @@ pygame.display.set_caption('Flappy Bird')
 
 #define font
 font = pygame.font.SysFont('Bauhaus 93', 60)
+small_font = pygame.font.SysFont('Bauhaus 93', 30)  # Added a smaller font for high score
 
 #define colours
 white = (255, 255, 255)
@@ -28,6 +29,7 @@ pipe_gap = 150
 pipe_frequency = 1500  # milliseconds
 last_pipe = pygame.time.get_ticks() - pipe_frequency
 score = 0
+high_score = 0  # Added high score variable
 pass_pipe = False
 collision_sound_played = False
 
@@ -57,14 +59,17 @@ def draw_text(text, font, text_col, x, y):
     screen.blit(img, (x, y))
 
 def reset_game():
-    global score, game_over, collision_sound_played
+    global score, game_over, collision_sound_played, high_score
     pipe_group.empty()
     flappy.rect.x = 100
     flappy.rect.y = int(screen_height / 2)
-    score = 0
     game_over = False
-    collision_sound_played = False  # Reset collision sound flag
+    collision_sound_played = False
+    if score > high_score:
+        high_score = score  # Update high score
+    score = 0  # Move the score reset after updating high score
     return score
+
 
 class Bird(pygame.sprite.Sprite):
     def __init__(self, x, y):
@@ -84,7 +89,7 @@ class Bird(pygame.sprite.Sprite):
         self.clicked_sound.set_volume(0.5)
 
     def update(self):
-        global score, game_over, collision_sound_played
+        global score, game_over, collision_sound_played, high_score
         if flying == True:
             self.vel += 0.5
             if self.vel > 8:
@@ -143,14 +148,12 @@ class Button():
         self.rect.topleft = (x, y)
 
     def draw(self):
-        global game_over
         action = False
         pos = pygame.mouse.get_pos()
 
         if self.rect.collidepoint(pos):
             if pygame.mouse.get_pressed()[0] == 1:
                 action = True
-                game_over = False  # Reset game_over when clicking restart
 
         screen.blit(self.image, (self.rect.x, self.rect.y))
 
@@ -217,8 +220,10 @@ while run:
     if game_over == True:
         if button.draw() == True:
             score = reset_game()
+            draw_text(f"High Score: {high_score}", small_font, white, screen_width - 250, 20)
 
-    draw_text(str(score), font, white, int(screen_width / 2), 20)  # Move the draw_text call here
+    draw_text(f"Score: {score}", font, white, int(screen_width / 2) - 150, 20)
+    draw_text(f"High Score: {high_score}", small_font, white, screen_width - 250, 20)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
