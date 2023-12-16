@@ -29,6 +29,7 @@ pipe_frequency = 1500  # milliseconds
 last_pipe = pygame.time.get_ticks() - pipe_frequency
 score = 0
 pass_pipe = False
+collision_sound_played = False
 
 # load images
 bg = pygame.image.load('img/bg.png')
@@ -50,9 +51,6 @@ pygame.mixer.music.play(-1)  # -1 means play continuously
 # Load sound for collision
 collision_sound = pygame.mixer.Sound('sound/collision.wav')
 collision_sound.set_volume(0.5)  # Adjust the volume level (0.5 means half volume)
-
-# Flag to track whether collision sound has been played
-collision_sound_played = False
 
 def draw_text(text, font, text_col, x, y):
     img = font.render(text, True, text_col)
@@ -180,13 +178,12 @@ while run:
     if len(pipe_group) > 0:
         if bird_group.sprites()[0].rect.left > pipe_group.sprites()[0].rect.left \
                 and bird_group.sprites()[0].rect.right < pipe_group.sprites()[0].rect.right \
-                and pass_pipe == False:
+                and not pass_pipe:
             pass_pipe = True
-        if pass_pipe == True:
-            if bird_group.sprites()[0].rect.left > pipe_group.sprites()[0].rect.right:
-                score += 1
-                pass_pipe = False
-                point_sound.play()
+        if pass_pipe and bird_group.sprites()[0].rect.left > pipe_group.sprites()[0].rect.right:
+            score += 1
+            pass_pipe = False
+            point_sound.play()
 
     # Check for collision with pipes
     if pygame.sprite.groupcollide(bird_group, pipe_group, False, False) and not collision_sound_played:
@@ -194,12 +191,12 @@ while run:
         collision_sound_played = True
         game_over = True
 
-    if flappy.rect.top < 0 or flappy.rect.bottom >= 768:
-        collision_sound.play()
-        collision_sound_played = True
+    if flappy.rect.top < 0:
         game_over = True
 
-    draw_text(str(score), font, white, int(screen_width / 2), 20)
+    if flappy.rect.bottom >= 768:
+        game_over = True
+        flying = False
 
     if game_over == False and flying == True:
         time_now = pygame.time.get_ticks()
@@ -219,8 +216,9 @@ while run:
 
     if game_over == True:
         if button.draw() == True:
-            game_over = False
             score = reset_game()
+
+    draw_text(str(score), font, white, int(screen_width / 2), 20)  # Move the draw_text call here
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
