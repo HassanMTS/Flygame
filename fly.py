@@ -13,14 +13,14 @@ screen_height = 936
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption('Flappy Bird')
 
-#define font
+# define font
 font = pygame.font.SysFont('Bauhaus 93', 60)
 small_font = pygame.font.SysFont('Bauhaus 93', 30)  # Added a smaller font for high score
 
-#define colours
+# define colours
 white = (255, 255, 255)
 
-#define game variables
+# define game variables
 ground_scroll = 0
 scroll_speed = 4
 flying = False
@@ -33,6 +33,7 @@ high_score = 0  # Added high score variable
 pass_pipe = False
 collision_sound_played = False
 restart_clicks = 0  # Added restart clicks counter
+player_name = ""  # Player's name
 
 # load images
 bg = pygame.image.load('img/bg.png')
@@ -60,7 +61,7 @@ def draw_text(text, font, text_col, x, y):
     screen.blit(img, (x, y))
 
 def reset_game():
-    global score, game_over, collision_sound_played, high_score, restart_clicks
+    global score, game_over, collision_sound_played, high_score, restart_clicks, player_name
     pipe_group.empty()
     flappy.rect.x = 100
     flappy.rect.y = int(screen_height / 2)
@@ -160,6 +161,51 @@ class Button():
 
         return action
 
+def get_input():
+    global player_name
+    input_box = pygame.Rect(20, 20, 140, 32)
+    color_inactive = pygame.Color('lightskyblue3')
+    color_active = pygame.Color('dodgerblue2')
+    color = color_inactive
+    active = False
+    text = ''
+    font = pygame.font.Font(None, 32)
+    clock = pygame.time.Clock()
+    input_active = True
+
+    while input_active:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if input_box.collidepoint(event.pos):
+                    active = not active
+                else:
+                    active = False
+                color = color_active if active else color_inactive
+            if event.type == pygame.KEYDOWN:
+                if active:
+                    if event.key == pygame.K_RETURN:
+                        player_name = text
+                        input_active = False
+                    elif event.key == pygame.K_BACKSPACE:
+                        text = text[:-1]
+                    else:
+                        text += event.unicode
+
+        screen.fill((30, 30, 30))
+        txt_surface = font.render(text, True, color)
+        width = max(200, txt_surface.get_width()+10)
+        input_box.w = width
+        screen.blit(txt_surface, (input_box.x+5, input_box.y+5))
+        pygame.draw.rect(screen, color, input_box, 2)
+        pygame.display.flip()
+        clock.tick(30)
+
+# Get player name before starting the game
+get_input()
+
 bird_group = pygame.sprite.Group()
 pipe_group = pygame.sprite.Group()
 
@@ -218,7 +264,9 @@ while run:
 
         pipe_group.update()
 
-    draw_text(f"Restart Clicks: {restart_clicks}", small_font, white, 20, 20)  # Display restart clicks
+    # Draw player name and restart clicks
+    draw_text(f"Restart Clicks: {restart_clicks}", small_font, white, 20, 60)
+    draw_text(f"Player: {player_name}", small_font, white, 20, 100)
     if game_over == True:
         if button.draw() == True:
             score = reset_game()
@@ -226,12 +274,6 @@ while run:
 
     draw_text(f"Score: {score}", font, white, int(screen_width / 2) - 150, 20)
     draw_text(f"High Score: {high_score}", small_font, white, screen_width - 250, 20)
-
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            run = False
-        if event.type == pygame.MOUSEBUTTONDOWN and flying == False and game_over == False:
-            flying = True
 
     pygame.display.update()
 
