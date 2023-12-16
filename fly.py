@@ -1,65 +1,57 @@
+# Import necessary libraries and modules
 import pygame
 from pygame.locals import *
 import random
 
+# Initialize Pygame
 pygame.init()
 
-clock = pygame.time.Clock()
-fps = 60
-
+# Game settings
+clock = pygame.time.Clock()  # Create a clock object to control the frame rate
+fps = 60  # Set the desired frames per second
 screen_width = 864
 screen_height = 936
+screen = pygame.display.set_mode((screen_width, screen_height))  # Create the game window
+pygame.display.set_caption('Flight')  # Set the window caption
 
-screen = pygame.display.set_mode((screen_width, screen_height))
-pygame.display.set_caption('Flight')
+# Fonts and colors
+font = pygame.font.SysFont('Bauhaus 93', 60)  # Set the main font for larger text
+small_font = pygame.font.SysFont('Bauhaus 93', 30)  # Set a smaller font for certain text
+white = (255, 255, 255)  # Define a white color
 
-#define font
-font = pygame.font.SysFont('Bauhaus 93', 60)
-small_font = pygame.font.SysFont('Bauhaus 93', 30)  # Added a smaller font for high score
-
-#define colours
-white = (255, 255, 255)
-
-#define game variables
+# Game variables
 ground_scroll = 0
 scroll_speed = 4
 flying = False
 game_over = False
 pipe_gap = 150
-pipe_frequency = 1500  # milliseconds
+pipe_frequency = 1500
 last_pipe = pygame.time.get_ticks() - pipe_frequency
 score = 0
-high_score = 0  # Added high score variable
+high_score = 0
 pass_pipe = False
 collision_sound_played = False
-restart_clicks = 0  # Added restart clicks counter
+restart_clicks = 0
 
-# load images
-bg = pygame.image.load('img/bg.png')
-ground_img = pygame.image.load('img/ground.png')
-button_img = pygame.image.load('img/restart.png')
+# Load images and initialize mixer
+bg = pygame.image.load('img/bg.png')  # Load the background image
+ground_img = pygame.image.load('img/ground.png')  # Load the ground image
+button_img = pygame.image.load('img/restart.png')  # Load the restart button image
+pygame.mixer.init()  # Initialize the sound mixer
+point_sound = pygame.mixer.Sound('sound/sound.wav')  # Load the point sound effect
+point_sound.set_volume(0.5)  # Set the volume level for the point sound
+pygame.mixer.music.load('sound/background_music.mp3')  # Load the background music
+pygame.mixer.music.set_volume(0.3)  # Set the volume level for the background music
+pygame.mixer.music.play(-1)  # Play the background music continuously
+collision_sound = pygame.mixer.Sound('sound/collision.wav')  # Load the collision sound effect
+collision_sound.set_volume(0.5)  # Set the volume level for the collision sound
 
-# Initialize mixer
-pygame.mixer.init()
-
-# Load sound
-point_sound = pygame.mixer.Sound('sound/sound.wav')
-point_sound.set_volume(0.5)  # Adjust the volume level (0.5 means half volume)
-
-# Load background music
-pygame.mixer.music.load('sound/background_music.mp3')
-pygame.mixer.music.set_volume(0.3)  # Adjust the volume level (0.3 means 30% volume)
-pygame.mixer.music.play(-1)  # -1 means play continuously
-
-# Load sound for collision
-collision_sound = pygame.mixer.Sound('sound/collision.wav')
-collision_sound.set_volume(0.5)  # Adjust the volume level (0.5 means half volume)
-
+# Function to draw text on the screen
 def draw_text(text, font, text_col, x, y):
     img = font.render(text, True, text_col)
     screen.blit(img, (x, y))
 
-
+# Function to reset the game state
 def reset_game():
     global score, game_over, collision_sound_played, high_score, restart_clicks
     pipe_group.empty()
@@ -68,42 +60,40 @@ def reset_game():
     game_over = False
     collision_sound_played = False
     if score > high_score:
-        high_score = score  # Update high score
-    score = 0  # Move the score reset after updating high score
-    restart_clicks += 1  # Increment restart clicks
+        high_score = score
+    score = 0
+    restart_clicks += 1
     return score
 
+# Bird class
 class Bird(pygame.sprite.Sprite):
     def __init__(self, x, y):
         pygame.sprite.Sprite.__init__(self)
-        self.images = []
+        self.images = [pygame.image.load(f'img/bird{num}.png') for num in range(1, 4)]  # Load bird animation frames
         self.index = 0
         self.counter = 0
-        for num in range(1, 4):
-            img = pygame.image.load(f'img/bird{num}.png')
-            self.images.append(img)
         self.image = self.images[self.index]
         self.rect = self.image.get_rect()
         self.rect.center = [x, y]
         self.vel = 0
         self.clicked = False
-        self.clicked_sound = pygame.mixer.Sound('sound/up.wav')
-        self.clicked_sound.set_volume(0.5)
+        self.clicked_sound = pygame.mixer.Sound('sound/up.wav')  # Load the click sound
+        self.clicked_sound.set_volume(0.5)  # Set the volume level for the click sound
 
     def update(self):
         global score, game_over, collision_sound_played, high_score
-        if flying == True:
+        if flying:
             self.vel += 0.5
             if self.vel > 8:
                 self.vel = 8
             if self.rect.bottom < 768:
                 self.rect.y += int(self.vel)
 
-        if game_over == False:
-            if pygame.mouse.get_pressed()[0] == 1 and self.clicked == False:
+        if not game_over:
+            if pygame.mouse.get_pressed()[0] == 1 and not self.clicked:
                 self.clicked = True
                 self.vel = -10
-                self.clicked_sound.play()  # Play click sound when flying
+                self.clicked_sound.play()
             if pygame.mouse.get_pressed()[0] == 0:
                 self.clicked = False
 
@@ -115,16 +105,15 @@ class Bird(pygame.sprite.Sprite):
                 self.index += 1
                 if self.index >= len(self.images):
                     self.index = 0
-            self.image = self.images[self.index]
-
             self.image = pygame.transform.rotate(self.images[self.index], self.vel * -2)
         else:
             self.image = pygame.transform.rotate(self.images[self.index], -90)
 
+# Pipe class
 class Pipe(pygame.sprite.Sprite):
     def __init__(self, x, y, position):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.image.load('img/pipe.png')
+        self.image = pygame.image.load('img/pipe.png')  # Load the pipe image
         self.rect = self.image.get_rect()
         if position == 1:
             self.image = pygame.transform.flip(self.image, False, True)
@@ -137,12 +126,12 @@ class Pipe(pygame.sprite.Sprite):
         self.rect.x -= scroll_speed
         if self.rect.right < 0:
             self.kill()
-        # Check for collision with the bird
         if pygame.sprite.spritecollide(flappy, pipe_group, False) and not collision_sound_played:
             collision_sound.play()
             collision_sound_played = True
             game_over = True
 
+# Button class
 class Button():
     def __init__(self, x, y, image):
         self.image = image
@@ -161,14 +150,16 @@ class Button():
 
         return action
 
+# Create sprite groups
 bird_group = pygame.sprite.Group()
 pipe_group = pygame.sprite.Group()
 
+# Initialize bird and button
 flappy = Bird(100, int(screen_height / 2))
 bird_group.add(flappy)
-
 button = Button(screen_width // 2 - 50, screen_height // 2 - 100, button_img)
 
+# Main game loop
 run = True
 while run:
     clock.tick(fps)
@@ -177,7 +168,6 @@ while run:
     bird_group.draw(screen)
     bird_group.update()
     pipe_group.draw(screen)
-
     screen.blit(ground_img, (ground_scroll, 768))
 
     if len(pipe_group) > 0:
@@ -199,7 +189,7 @@ while run:
         game_over = True
         flying = False
 
-    if game_over == False and flying == True:
+    if not game_over and flying:
         time_now = pygame.time.get_ticks()
         if time_now - last_pipe > pipe_frequency:
             pipe_height = random.randint(-100, 100)
@@ -230,7 +220,7 @@ while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
-        if event.type == pygame.MOUSEBUTTONDOWN and flying == False and game_over == False:
+        if event.type == pygame.MOUSEBUTTONDOWN and not flying and not game_over:
             flying = True
 
     pygame.display.update()
