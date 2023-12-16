@@ -51,17 +51,21 @@ pygame.mixer.music.play(-1)  # -1 means play continuously
 collision_sound = pygame.mixer.Sound('sound/collision.wav')
 collision_sound.set_volume(0.5)  # Adjust the volume level (0.5 means half volume)
 
+# Flag to track whether collision sound has been played
+collision_sound_played = False
+
 def draw_text(text, font, text_col, x, y):
     img = font.render(text, True, text_col)
     screen.blit(img, (x, y))
 
 def reset_game():
-    global score, game_over
+    global score, game_over, collision_sound_played
     pipe_group.empty()
     flappy.rect.x = 100
     flappy.rect.y = int(screen_height / 2)
     score = 0
     game_over = False
+    collision_sound_played = False  # Reset collision sound flag
     return score
 
 class Bird(pygame.sprite.Sprite):
@@ -82,7 +86,7 @@ class Bird(pygame.sprite.Sprite):
         self.clicked_sound.set_volume(0.5)
 
     def update(self):
-        global score, game_over
+        global score, game_over, collision_sound_played
         if flying == True:
             self.vel += 0.5
             if self.vel > 8:
@@ -124,13 +128,14 @@ class Pipe(pygame.sprite.Sprite):
             self.rect.topleft = [x, y + int(pipe_gap / 2)]
 
     def update(self):
-        global game_over
+        global game_over, collision_sound_played
         self.rect.x -= scroll_speed
         if self.rect.right < 0:
             self.kill()
         # Check for collision with the bird
-        if pygame.sprite.spritecollide(flappy, pipe_group, False):
+        if pygame.sprite.spritecollide(flappy, pipe_group, False) and not collision_sound_played:
             collision_sound.play()
+            collision_sound_played = True
             game_over = True
 
 class Button():
@@ -184,12 +189,14 @@ while run:
                 point_sound.play()
 
     # Check for collision with pipes
-    if pygame.sprite.groupcollide(bird_group, pipe_group, False, False):
+    if pygame.sprite.groupcollide(bird_group, pipe_group, False, False) and not collision_sound_played:
         collision_sound.play()
+        collision_sound_played = True
         game_over = True
 
     if flappy.rect.top < 0 or flappy.rect.bottom >= 768:
         collision_sound.play()
+        collision_sound_played = True
         game_over = True
 
     draw_text(str(score), font, white, int(screen_width / 2), 20)
