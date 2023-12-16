@@ -32,6 +32,7 @@ score = 0
 high_score = 0  # Added high score variable
 pass_pipe = False
 collision_sound_played = False
+restart_clicks = 0  # Added restart clicks counter
 
 # load images
 bg = pygame.image.load('img/bg.png')
@@ -59,7 +60,7 @@ def draw_text(text, font, text_col, x, y):
     screen.blit(img, (x, y))
 
 def reset_game():
-    global score, game_over, collision_sound_played, high_score
+    global score, game_over, collision_sound_played, high_score, restart_clicks
     pipe_group.empty()
     flappy.rect.x = 100
     flappy.rect.y = int(screen_height / 2)
@@ -68,8 +69,8 @@ def reset_game():
     if score > high_score:
         high_score = score  # Update high score
     score = 0  # Move the score reset after updating high score
+    restart_clicks += 1  # Increment restart clicks
     return score
-
 
 class Bird(pygame.sprite.Sprite):
     def __init__(self, x, y):
@@ -221,6 +222,7 @@ while run:
         if button.draw() == True:
             score = reset_game()
             draw_text(f"High Score: {high_score}", small_font, white, screen_width - 250, 20)
+            draw_text(f"Restart Clicks: {restart_clicks}", small_font, white, 20, 20)  # Display restart clicks
 
     draw_text(f"Score: {score}", font, white, int(screen_width / 2) - 150, 20)
     draw_text(f"High Score: {high_score}", small_font, white, screen_width - 250, 20)
