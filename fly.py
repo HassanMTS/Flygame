@@ -15,7 +15,7 @@ pygame.display.set_caption('Flappy Bird')
 #define game variables
 ground_scroll = 0
 scroll_speed = 4
-
+flying = False
 #load images
 bg = pygame.image.load('img/bg.png')
 ground_img = pygame.image.load('img/ground.png')
@@ -34,10 +34,14 @@ class Bird(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = [x, y]
         self.vel = 0  # Initialize velocity
+        self.clicked = False
 
     #gravity
     def update(self):
-        self.vel += 0.5
+
+        if flying == True:
+
+            self.vel += 0.5
         if self.vel > 8:
             self.vel = 8
             
@@ -46,8 +50,12 @@ class Bird(pygame.sprite.Sprite):
             self.rect.y += int(self.vel)
 
         #jump
-        if pygame.mouse.get_pressed()[0] == 1:
+        if pygame.mouse.get_pressed()[0] == 1 and self.clicked == False:
+            self.clicked = True
             self.vel = -10
+        if pygame.mouse.get_pressed()[0] == 0:
+            self.clicked = False
+
 
         # handle the animation
         self.counter += 1
@@ -59,6 +67,9 @@ class Bird(pygame.sprite.Sprite):
             if self.index >= len(self.images):
                 self.index = 0
         self.image = self.images[self.index]
+
+        #rotate 
+        self.image = pygame.transform.rotate(self.images[self.index], self.vel * -2)
 
 
 bird_group = pygame.sprite.Group()
@@ -87,6 +98,8 @@ while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
+        if event.type == pygame.MOUSEBUTTONDOWN and flying == False:
+            flying = True
 
     pygame.display.update()
 
