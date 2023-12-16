@@ -3,6 +3,7 @@
 ## Overview
 This repository contains the source code for a simple Flappy Bird game implemented in Python using the Pygame library. The game includes features such as sound effects, music, score tracking, high score recording, and a restart counter.
 
+
 ## Features
 
 ### 1. Game Mechanics
@@ -27,14 +28,14 @@ This repository contains the source code for a simple Flappy Bird game implement
 - Pygame library (`pip install pygame`)
 
 ### Running the Game
-1. Clone the repository: `git clone https://github.com/your-username/flappy-bird-python.git`
-2. Navigate to the project directory: `cd flappy-bird-python`
-3. Run the game: `python flappy_bird.py`
+1. Clone the repository: `git clone https://github.com/HassanMTS/Flygame.git`
+2. Navigate to the project directory: `cd fly.python`
+3. Run the game: `python fly.py`
 
 ## Code Structure
-- `flappy_bird.py`: Main game script containing the game loop and logic.
-- `sprites/`: Directory containing sprite images for the bird, pipes, and background.
-- `sounds/`: Directory containing sound files for the game.
+- `fly.py`: Main game script containing the game loop and logic.
+- `img/`: Directory containing sprite images for the bird, pipes, and background.
+- `sound/`: Directory containing sound files for the game.
 
 ## Acknowledgments
 - Inspired by the original Flappy Bird game created by Dong Nguyen.
@@ -44,6 +45,6 @@ This repository contains the source code for a simple Flappy Bird game implement
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
 
 ## Author
-[Your Name]
+Hassan Talib
 
 Feel free to contribute to the project or use the code as a base for your own projects. If you encounter any issues or have suggestions, please open an issue. Enjoy playing Flappy Bird!
