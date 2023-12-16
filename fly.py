@@ -218,11 +218,11 @@ while run:
 
         pipe_group.update()
 
+    draw_text(f"Restart Clicks: {restart_clicks}", small_font, white, 20, 20)  # Display restart clicks
     if game_over == True:
         if button.draw() == True:
             score = reset_game()
             draw_text(f"High Score: {high_score}", small_font, white, screen_width - 250, 20)
-            draw_text(f"Restart Clicks: {restart_clicks}", small_font, white, 20, 20)  # Display restart clicks
 
     draw_text(f"Score: {score}", font, white, int(screen_width / 2) - 150, 20)
     draw_text(f"High Score: {high_score}", small_font, white, screen_width - 250, 20)
