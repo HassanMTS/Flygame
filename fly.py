@@ -3,6 +3,8 @@ from pygame.locals import *
 
 pygame.init()
 
+clock = pygame.time.Clock()
+fps = 60
 
 screen_width = 864
 screen_height = 936
@@ -21,12 +23,14 @@ ground_img = pygame.image.load('img/ground.png')
 run = True
 while run:
 
+    clock.tick(fps)
+
     #Draw the background
     screen.blit(bg, (0,0))
 
     #Draw and scroll the ground
     screen.blit(ground_img, (ground_scroll, 768))
-    ground_scroll = scroll_speed
+    ground_scroll -= scroll_speed
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
