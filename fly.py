@@ -49,7 +49,6 @@ pygame.mixer.music.load('sound/background_music.mp3')  # Load the background mus
 pygame.mixer.music.set_volume(0.3)  # Set the volume level for the background music
 pygame.mixer.music.play(-1)  # Play the background music continuously
 collision_sound = pygame.mixer.Sound('sound/collision.wav')  # Load the collision sound effect
-collision_sound.set_volume(0.5)  # Set the volume level for the collision sound
 
 # Function to draw text on the screen
 def draw_text(text, font, text_col, x, y):
@@ -58,13 +57,12 @@ def draw_text(text, font, text_col, x, y):
 
 # Function to reset the game state
 def reset_game():
-    global score, game_over, collision_sound_played, high_score, restart_clicks, flying
+    global score, game_over, collision_sound_played, high_score, restart_clicks
     pipe_group.empty()
     flappy.rect.x = 100
     flappy.rect.y = int(screen_height / 2)
     game_over = False
     collision_sound_played = False
-    flying = False
     if score > high_score:
         high_score = score
     score = 0
@@ -112,7 +110,7 @@ class Bird(pygame.sprite.Sprite):
         self.clicked_sound.set_volume(0.5)  # Set the volume level for the click sound
 
     def update(self):
-        global score, game_over, collision_sound_played, high_score, flying
+        global score, game_over, collision_sound_played, high_score, flying, pass_pipe
         if flying:
             self.vel += 0.5
             if self.vel > 8:
@@ -221,6 +219,8 @@ while run:
                 # Check if the restart button is clicked
                 if button.draw(screen):
                     score = reset_game()
+            elif hassanmts_button.draw(screen):  # Check if the "hassanmts" button is clicked
+                customization_menu()  # Call the customization_menu function
 
     # Update game elements
     if not game_over:
@@ -274,8 +274,9 @@ while run:
     bird_group.draw(screen)
     screen.blit(ground_img, (ground_scroll, 768))
 
-    # Draw "hassanmts" button
-    customize_group.draw(screen)
+    # Draw buttons
+    button.draw(screen)
+    hassanmts_button.draw(screen)
 
     # Draw text and update display
     draw_text(f"Times Restarted: {restart_clicks}", small_font, white, 20, 20)
