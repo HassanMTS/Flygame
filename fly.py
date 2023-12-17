@@ -89,7 +89,7 @@ class CustomizeButton():
 
 # New function to handle customization menu
 def customization_menu():
-    global background_index, pipe_index, music_index
+    global background_index, pipe_index, music_index, bg, pipe_img
     background_index = (background_index + 1) % len(background_options)
     pipe_index = (pipe_index + 1) % len(pipe_options)
     music_index = (music_index + 1) % len(music_options)
@@ -247,6 +247,7 @@ while run:
         pipe_group.update()
 
     draw_text(f"Times Restarted: {restart_clicks}", small_font, white, 20, 20)
+    
     if game_over:
         if customize_button.draw():
             score = reset_game()
