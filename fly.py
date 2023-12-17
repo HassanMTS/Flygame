@@ -19,6 +19,11 @@ font = pygame.font.SysFont('Bauhaus 93', 60)  # Set the main font for larger tex
 small_font = pygame.font.SysFont('Bauhaus 93', 30)  # Set a smaller font for certain text
 white = (255, 255, 255)  # Define a white color
 
+alt_bg = pygame.image.load('img/alternate_bg.png')  # Load the alternative background image
+alt_pipe_img = pygame.image.load('img/alternate_pipe.png')  # Load the alternative pipe image
+alt_music = 'sound/alternate_music.mp3'  # Set the alternative background music file
+
+
 # Game variables
 ground_scroll = 0
 scroll_speed = 4
@@ -36,8 +41,6 @@ restart_clicks = 0
 # Load images and initialize mixer
 bg = pygame.image.load('img/bg.png')  # Load the background image
 ground_img = pygame.image.load('img/ground.png')  # Load the ground image
-button_img = pygame.image.load('img/restart.png')  # Load the restart button image
-customize_button_img = pygame.image.load('img/customize_button.png')  # Load the customize button image
 pygame.mixer.init()  # Initialize the sound mixer
 point_sound = pygame.mixer.Sound('sound/sound.wav')  # Load the point sound effect
 point_sound.set_volume(0.5)  # Set the volume level for the point sound
@@ -46,66 +49,6 @@ pygame.mixer.music.set_volume(0.3)  # Set the volume level for the background mu
 pygame.mixer.music.play(-1)  # Play the background music continuously
 collision_sound = pygame.mixer.Sound('sound/collision.wav')  # Load the collision sound effect
 collision_sound.set_volume(0.5)  # Set the volume level for the collision sound
-
-# New images and music options
-background_options = ['img/bg.png', 'img/alternate_bg.png']
-pipe_options = ['img/pipe.png', 'img/alternate_pipe.png']
-music_options = ['sound/background_music.mp3', 'sound/alternate_music.mp3']
-
-# Index to track current options
-background_index = 0
-pipe_index = 0
-music_index = 0
-
-# Function to load new images and music
-def load_options():
-    bg = pygame.image.load(background_options[background_index])
-    pipe_img = pygame.image.load(pipe_options[pipe_index])
-    pygame.mixer.music.load(music_options[music_index])
-    pygame.mixer.music.play(-1)
-
-    return bg, pipe_img
-
-# New Button class for customization
-class CustomizeButton():
-    def __init__(self, x, y, image, callback):
-        self.image = image
-        self.rect = self.image.get_rect()
-        self.rect.topleft = (x, y)
-        self.callback = callback
-
-    def draw(self):
-        action = False
-        pos = pygame.mouse.get_pos()
-
-        if self.rect.collidepoint(pos):
-            if pygame.mouse.get_pressed()[0] == 1:
-                action = True
-                self.callback()
-
-        screen.blit(self.image, (self.rect.x, self.rect.y))
-
-        return action
-
-# New function to handle customization menu
-def customization_menu():
-    global background_index, pipe_index, music_index, bg, pipe_img
-    background_index = (background_index + 1) % len(background_options)
-    pipe_index = (pipe_index + 1) % len(pipe_options)
-    music_index = (music_index + 1) % len(music_options)
-    bg, pipe_img = load_options()
-
-    # Redraw the screen with new options
-    screen.blit(bg, (0, 0))
-    pipe_group.draw(screen)
-    screen.blit(ground_img, (ground_scroll, 768))
-    draw_text(f"Score: {score}", font, white, int(screen_width / 2) - 150, 20)
-
-    pygame.display.update()
-    pygame.time.delay(1000)  # Add a delay to visually confirm the changes
-
-# Initialize customization button
-customize_button = CustomizeButton(20, screen_height - 70, customize_button_img, customization_menu)
 
 # Function to draw text on the screen
 def draw_text(text, font, text_col, x, y):
@@ -126,6 +69,32 @@ def reset_game():
     restart_clicks += 1
     return score
 
+# Function to handle customization menu
+def customization_menu():
+    global bg, pipe_img, alt_bg, alt_pipe_img, alt_music
+    background_options = [bg, alt_bg]
+    pipe_options = [pipe_img, alt_pipe_img]
+    music_options = [pygame.mixer.music.get_busy(), alt_music]
+
+    bg_index = (background_options.index(bg) + 1) % len(background_options)
+    pipe_index = (pipe_options.index(pipe_img) + 1) % len(pipe_options)
+    music_index = (music_options.index(pygame.mixer.music.get_busy()) + 1) % len(music_options)
+
+    bg = background_options[bg_index]
+    pipe_img = pipe_options[pipe_index]
+    if pygame.mixer.music.get_busy():
+        pygame.mixer.music.stop()
+        pygame.mixer.music.load(music_options[music_index])
+        pygame.mixer.music.play(-1)
+
+    # Redraw the screen with new options
+    screen.blit(bg, (0, 0))
+    pipe_group.draw(screen)
+    screen.blit(ground_img, (ground_scroll, 768))
+    draw_text(f"Score: {score}", font, white, int(screen_width / 2) - 150, 20)
+
+    pygame.display.update()
+    pygame.time.delay(1000)  # Add a delay to visually confirm the changes
 # Bird class
 class Bird(pygame.sprite.Sprite):
     def __init__(self, x, y):
@@ -192,13 +161,46 @@ class Pipe(pygame.sprite.Sprite):
             collision_sound_played = True
             game_over = True
 
-# Create sprite groups
+# Button class
+class Button(pygame.sprite.Sprite):
+    def __init__(self, x, y, image, callback=None):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = image
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (x, y)
+        self.callback = callback
+
+    def draw(self, surface):
+        action = False
+        pos = pygame.mouse.get_pos()
+
+        if self.rect.collidepoint(pos):
+            if pygame.mouse.get_pressed()[0] == 1:
+                action = True
+                if self.callback:
+                    self.callback()
+
+        surface.blit(self.image, (self.rect.x, self.rect.y))
+
+        return action
+
+# New sprite groups
 bird_group = pygame.sprite.Group()
 pipe_group = pygame.sprite.Group()
+customize_group = pygame.sprite.Group()
+button_group = pygame.sprite.Group()
 
 # Initialize bird and button
 flappy = Bird(100, int(screen_height / 2))
 bird_group.add(flappy)
+button_img = pygame.image.load('img/restart.png')
+button = Button(screen_width // 2 - 50, screen_height // 2 - 100, button_img, reset_game)
+button_group.add(button)
+
+# Initialize "hassanmts" button
+hassanmts_img = pygame.image.load('img/hassanmts.png')
+hassanmts_button = Button(20, screen_height - 70, hassanmts_img, customization_menu)
+customize_group.add(hassanmts_button)
 
 # Main game loop
 run = True
@@ -246,10 +248,12 @@ while run:
 
         pipe_group.update()
 
+    # Draw "hassanmts" button
+    customize_group.draw(screen)
+
     draw_text(f"Times Restarted: {restart_clicks}", small_font, white, 20, 20)
-    
     if game_over:
-        if customize_button.draw():
+        if button.draw(screen):
             score = reset_game()
             draw_text(f"High Score: {high_score}", small_font, white, screen_width - 250, 20)
 
