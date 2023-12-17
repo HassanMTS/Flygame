@@ -2,6 +2,7 @@
 import pygame
 from pygame.locals import *
 import random
+import sys
 
 # Initialize Pygame
 pygame.init()
@@ -22,7 +23,7 @@ white = (255, 255, 255)  # Define a white color
 alt_bg = pygame.image.load('img/alternate_bg.png')  # Load the alternative background image
 alt_pipe_img = pygame.image.load('img/alternate_pipe.png')  # Load the alternative pipe image
 alt_music = 'sound/alternate_music.mp3'  # Set the alternative background music file
-
+pipe_img = pygame.image.load('img/pipe.png')  # Load the default pipe image
 
 # Game variables
 ground_scroll = 0
@@ -57,19 +58,19 @@ def draw_text(text, font, text_col, x, y):
 
 # Function to reset the game state
 def reset_game():
-    global score, game_over, collision_sound_played, high_score, restart_clicks
+    global score, game_over, collision_sound_played, high_score, restart_clicks, flying
     pipe_group.empty()
     flappy.rect.x = 100
     flappy.rect.y = int(screen_height / 2)
     game_over = False
     collision_sound_played = False
+    flying = False
     if score > high_score:
         high_score = score
     score = 0
     restart_clicks += 1
     return score
 
-# Function to handle customization menu
 def customization_menu():
     global bg, pipe_img, alt_bg, alt_pipe_img, alt_music
     background_options = [bg, alt_bg]
@@ -95,7 +96,7 @@ def customization_menu():
 
     pygame.display.update()
     pygame.time.delay(1000)  # Add a delay to visually confirm the changes
-# Bird class
+
 class Bird(pygame.sprite.Sprite):
     def __init__(self, x, y):
         pygame.sprite.Sprite.__init__(self)
@@ -111,7 +112,7 @@ class Bird(pygame.sprite.Sprite):
         self.clicked_sound.set_volume(0.5)  # Set the volume level for the click sound
 
     def update(self):
-        global score, game_over, collision_sound_played, high_score
+        global score, game_over, collision_sound_played, high_score, flying
         if flying:
             self.vel += 0.5
             if self.vel > 8:
@@ -127,6 +128,9 @@ class Bird(pygame.sprite.Sprite):
             if pygame.mouse.get_pressed()[0] == 0:
                 self.clicked = False
 
+            # Draw "hassanmts" button
+            customize_group.draw(screen)
+
             self.counter += 1
             flap_cooldown = 5
 
@@ -139,7 +143,6 @@ class Bird(pygame.sprite.Sprite):
         else:
             self.image = pygame.transform.rotate(self.images[self.index], -90)
 
-# Pipe class
 class Pipe(pygame.sprite.Sprite):
     def __init__(self, x, y, position):
         pygame.sprite.Sprite.__init__(self)
@@ -161,7 +164,6 @@ class Pipe(pygame.sprite.Sprite):
             collision_sound_played = True
             game_over = True
 
-# Button class
 class Button(pygame.sprite.Sprite):
     def __init__(self, x, y, image, callback=None):
         pygame.sprite.Sprite.__init__(self)
@@ -171,18 +173,16 @@ class Button(pygame.sprite.Sprite):
         self.callback = callback
 
     def draw(self, surface):
-        action = False
-        pos = pygame.mouse.get_pos()
+        mouse_pos = pygame.mouse.get_pos()
 
-        if self.rect.collidepoint(pos):
-            if pygame.mouse.get_pressed()[0] == 1:
-                action = True
+        if self.rect.collidepoint(mouse_pos):
+            if pygame.mouse.get_pressed()[0]:  # Check for button down
                 if self.callback:
                     self.callback()
+                return True
 
         surface.blit(self.image, (self.rect.x, self.rect.y))
-
-        return action
+        return False
 
 # New sprite groups
 bird_group = pygame.sprite.Group()
@@ -206,33 +206,55 @@ customize_group.add(hassanmts_button)
 run = True
 while run:
     clock.tick(fps)
-    screen.blit(bg, (0, 0))
 
-    bird_group.draw(screen)
-    bird_group.update()
-    pipe_group.draw(screen)
-    screen.blit(ground_img, (ground_scroll, 768))
+    # Event handling
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            run = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if not flying and not game_over:
+                # Make the bird fly on mouse click
+                flappy.vel = -10
+                flappy.clicked_sound.play()
+                flying = True  # Start the game when the user clicks the mouse
+            elif game_over:
+                # Check if the restart button is clicked
+                if button.draw(screen):
+                    score = reset_game()
 
-    if len(pipe_group) > 0:
-        if bird_group.sprites()[0].rect.left > pipe_group.sprites()[0].rect.left \
-                and bird_group.sprites()[0].rect.right < pipe_group.sprites()[0].rect.right \
-                and not pass_pipe:
-            pass_pipe = True
-        if pass_pipe and bird_group.sprites()[0].rect.left > pipe_group.sprites()[0].rect.right:
-            score += 1
-            pass_pipe = False
-            point_sound.play()
+    # Update game elements
+    if not game_over:
+        bird_group.update()
+        pipe_group.update()
 
-    if pygame.sprite.groupcollide(bird_group, pipe_group, False, False) and not collision_sound_played:
-        collision_sound.play()
-        collision_sound_played = True
-        game_over = True
+        # Check for collisions and score
+        if len(pipe_group) > 0:
+            if (
+                bird_group.sprites()[0].rect.left > pipe_group.sprites()[0].rect.left
+                and bird_group.sprites()[0].rect.right < pipe_group.sprites()[0].rect.right
+                and not pass_pipe
+            ):
+                pass_pipe = True
+            if (
+                pass_pipe
+                and bird_group.sprites()[0].rect.left > pipe_group.sprites()[0].rect.right
+            ):
+                score += 1
+                pass_pipe = False
+                point_sound.play()
 
-    if flappy.rect.top < 0 or flappy.rect.bottom >= 768:
-        game_over = True
-        flying = False
+        if pygame.sprite.groupcollide(
+            bird_group, pipe_group, False, False
+        ) and not collision_sound_played:
+            collision_sound.play()
+            collision_sound_played = True
+            game_over = True
 
-    if not game_over and flying:
+        if flappy.rect.top < 0 or flappy.rect.bottom >= 768:
+            game_over = True
+            flying = False
+
+        # Generate pipes
         time_now = pygame.time.get_ticks()
         if time_now - last_pipe > pipe_frequency:
             pipe_height = random.randint(-100, 100)
@@ -246,29 +268,25 @@ while run:
         if abs(ground_scroll) > 35:
             ground_scroll = 0
 
-        pipe_group.update()
+    # Drawing
+    screen.blit(bg, (0, 0))
+    pipe_group.draw(screen)
+    bird_group.draw(screen)
+    screen.blit(ground_img, (ground_scroll, 768))
 
     # Draw "hassanmts" button
     customize_group.draw(screen)
 
+    # Draw text and update display
     draw_text(f"Times Restarted: {restart_clicks}", small_font, white, 20, 20)
-    if game_over:
-        if button.draw(screen):
-            score = reset_game()
-            draw_text(f"High Score: {high_score}", small_font, white, screen_width - 250, 20)
-
     draw_text(f"Score: {score}", font, white, int(screen_width / 2) - 150, 20)
     draw_text(f"High Score: {high_score}", small_font, white, screen_width - 250, 20)
-
     constant_text = "Made by HassanMTS on Github"
     draw_text(constant_text, small_font, (0, 0, 0), int(screen_width / 2), screen_height - 30)
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            run = False
-        if event.type == pygame.MOUSEBUTTONDOWN and not flying and not game_over:
-            flying = True
-
+    # Update the display
     pygame.display.update()
 
+# Quit the game
 pygame.quit()
+sys.exit()
